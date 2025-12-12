@@ -1,9 +1,7 @@
 {
-  "/loans/page": "app/loans/page.js",
   "/payroll/page": "app/payroll/page.js",
-  "/routes/page": "app/routes/page.js",
   "/pets/page": "app/pets/page.js",
-  "/pos/page": "app/pos/page.js",
   "/grooming/page": "app/grooming/page.js",
+  "/pos/page": "app/pos/page.js",
   "/veterinary/page": "app/veterinary/page.js"
 }

@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { CreditCard, ShoppingCart, Plus, Minus, Trash2, FileText, Percent } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { CreditCard, ShoppingCart, Plus, Minus, Trash2, FileText, Percent, Scissors, Droplets, Sparkles } from "lucide-react"
 
 const formatCurrency = (cents: number) => {
   return new Intl.NumberFormat("es-MX", {
@@ -62,6 +63,34 @@ export default function POSPage() {
   const getServiceName = (serviceId: string) => {
     return services.find((s) => s.id === serviceId)?.name || "Servicio desconocido"
   }
+
+  // Filtrar servicios por tipo
+  const groomingServices = services.filter((s) => s.type === "grooming")
+  const otherServices = services.filter((s) => s.type !== "grooming")
+
+  // Agrupar servicios de grooming por tipo de servicio y tamaño
+  const bathServices = groomingServices.filter((s) => s.name.toLowerCase().includes("baño"))
+  const cutServices = groomingServices.filter((s) => s.name.toLowerCase().includes("corte"))
+  const styleServices = groomingServices.filter((s) => s.name.toLowerCase().includes("peinado"))
+
+  // Agrupar por tamaño
+  const groupBySize = (serviceList: typeof services) => {
+    const grouped: Record<string, typeof services> = {
+      pequeño: [],
+      mediano: [],
+      grande: [],
+    }
+    serviceList.forEach((service) => {
+      if (service.petSize) {
+        grouped[service.petSize].push(service)
+      }
+    })
+    return grouped
+  }
+
+  const bathsBySize = groupBySize(bathServices)
+  const cutsBySize = groupBySize(cutServices)
+  const stylesBySize = groupBySize(styleServices)
 
   const getClientName = (clientId: string) => {
     return clients.find((c) => c.id === clientId)?.name || ""
@@ -120,27 +149,158 @@ export default function POSPage() {
               <CardTitle>Catálogo de Servicios</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {services.map((service) => (
-                  <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                    <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-medium">{service.name}</h3>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant="outline">{service.type}</Badge>
-                            <span className="text-sm text-muted-foreground">{service.durationMin}min</span>
-                          </div>
-                          <div className="text-lg font-bold mt-2">{formatCurrency(service.priceCents)}</div>
-                        </div>
-                        <Button size="sm" onClick={() => addToCart(service.id)} className="ml-4">
-                          <Plus className="w-4 h-4" />
-                        </Button>
+              <Tabs defaultValue="baths" className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                  <TabsTrigger value="baths">
+                    <Droplets className="w-4 h-4 mr-2" />
+                    Baños
+                  </TabsTrigger>
+                  <TabsTrigger value="cuts">
+                    <Scissors className="w-4 h-4 mr-2" />
+                    Cortes
+                  </TabsTrigger>
+                  <TabsTrigger value="styles">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Peinados
+                  </TabsTrigger>
+                  <TabsTrigger value="other">Otros</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="baths" className="space-y-6 mt-4">
+                  {["pequeño", "mediano", "grande"].map((size) => (
+                    <div key={size}>
+                      <h3 className="text-lg font-semibold mb-3 capitalize">{size}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {bathsBySize[size as keyof typeof bathsBySize]
+                          .sort((a, b) => {
+                            const order = { corto: 1, medio: 2, largo: 3 }
+                            return (order[a.hairLength || "corto"] || 0) - (order[b.hairLength || "corto"] || 0)
+                          })
+                          .map((service) => (
+                            <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                              <CardContent className="pt-4">
+                                <div className="flex flex-col">
+                                  <div className="flex-1">
+                                    <h3 className="font-medium text-sm">{service.name.replace("Baño - ", "")}</h3>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {service.hairLength}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">{service.durationMin}min</span>
+                                    </div>
+                                    <div className="text-base font-bold mt-2">{formatCurrency(service.priceCents)}</div>
+                                  </div>
+                                  <Button size="sm" onClick={() => addToCart(service.id)} className="mt-2 w-full">
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Agregar
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="cuts" className="space-y-6 mt-4">
+                  {["pequeño", "mediano", "grande"].map((size) => (
+                    <div key={size}>
+                      <h3 className="text-lg font-semibold mb-3 capitalize">{size}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {cutsBySize[size as keyof typeof cutsBySize]
+                          .sort((a, b) => {
+                            const order = { corto: 1, medio: 2, largo: 3 }
+                            return (order[a.hairLength || "corto"] || 0) - (order[b.hairLength || "corto"] || 0)
+                          })
+                          .map((service) => (
+                            <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                              <CardContent className="pt-4">
+                                <div className="flex flex-col">
+                                  <div className="flex-1">
+                                    <h3 className="font-medium text-sm">{service.name.replace("Corte - ", "")}</h3>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {service.hairLength}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">{service.durationMin}min</span>
+                                    </div>
+                                    <div className="text-base font-bold mt-2">{formatCurrency(service.priceCents)}</div>
+                                  </div>
+                                  <Button size="sm" onClick={() => addToCart(service.id)} className="mt-2 w-full">
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Agregar
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="styles" className="space-y-6 mt-4">
+                  {["pequeño", "mediano", "grande"].map((size) => (
+                    <div key={size}>
+                      <h3 className="text-lg font-semibold mb-3 capitalize">{size}</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {stylesBySize[size as keyof typeof stylesBySize]
+                          .sort((a, b) => {
+                            const order = { corto: 1, medio: 2, largo: 3 }
+                            return (order[a.hairLength || "corto"] || 0) - (order[b.hairLength || "corto"] || 0)
+                          })
+                          .map((service) => (
+                            <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                              <CardContent className="pt-4">
+                                <div className="flex flex-col">
+                                  <div className="flex-1">
+                                    <h3 className="font-medium text-sm">{service.name.replace("Peinado - ", "")}</h3>
+                                    <div className="flex items-center space-x-2 mt-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {service.hairLength}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground">{service.durationMin}min</span>
+                                    </div>
+                                    <div className="text-base font-bold mt-2">{formatCurrency(service.priceCents)}</div>
+                                  </div>
+                                  <Button size="sm" onClick={() => addToCart(service.id)} className="mt-2 w-full">
+                                    <Plus className="w-4 h-4 mr-1" />
+                                    Agregar
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </TabsContent>
+
+                <TabsContent value="other" className="mt-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {otherServices.map((service) => (
+                      <Card key={service.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h3 className="font-medium">{service.name}</h3>
+                              <div className="flex items-center space-x-2 mt-1">
+                                <Badge variant="outline">{service.type}</Badge>
+                                <span className="text-sm text-muted-foreground">{service.durationMin}min</span>
+                              </div>
+                              <div className="text-lg font-bold mt-2">{formatCurrency(service.priceCents)}</div>
+                            </div>
+                            <Button size="sm" onClick={() => addToCart(service.id)} className="ml-4">
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </div>

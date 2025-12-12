@@ -54,6 +54,8 @@ export interface Service {
   type: "grooming" | "consulta" | "vacuna" | "extra"
   priceCents: number
   durationMin: number
+  petSize?: "pequeño" | "mediano" | "grande" // Tamaño de mascota
+  hairLength?: "corto" | "medio" | "largo" // Largo de pelo (para baños, cortes y peinados)
 }
 
 export interface Appointment {
@@ -754,12 +756,40 @@ export const useAppStore = create<AppState>((set, get) => ({
   ],
 
   services: [
-    { id: "s1", name: "Baño Completo", type: "grooming", priceCents: 15000, durationMin: 90 },
-    { id: "s2", name: "Corte y Peinado", type: "grooming", priceCents: 20000, durationMin: 120 },
-    { id: "s3", name: "Consulta General", type: "consulta", priceCents: 25000, durationMin: 30 },
-    { id: "s4", name: "Vacuna Múltiple", type: "vacuna", priceCents: 18000, durationMin: 15 },
-    { id: "s5", name: "Desparasitación", type: "extra", priceCents: 12000, durationMin: 10 },
-    { id: "s6", name: "Limpieza Dental", type: "extra", priceCents: 30000, durationMin: 45 },
+    // Baños por tamaño y largo de pelo
+    { id: "s1", name: "Baño - Pequeño Pelo Corto", type: "grooming", priceCents: 12000, durationMin: 60, petSize: "pequeño", hairLength: "corto" },
+    { id: "s2", name: "Baño - Pequeño Pelo Medio", type: "grooming", priceCents: 14000, durationMin: 75, petSize: "pequeño", hairLength: "medio" },
+    { id: "s3", name: "Baño - Pequeño Pelo Largo", type: "grooming", priceCents: 16000, durationMin: 90, petSize: "pequeño", hairLength: "largo" },
+    { id: "s4", name: "Baño - Mediano Pelo Corto", type: "grooming", priceCents: 15000, durationMin: 75, petSize: "mediano", hairLength: "corto" },
+    { id: "s5", name: "Baño - Mediano Pelo Medio", type: "grooming", priceCents: 18000, durationMin: 90, petSize: "mediano", hairLength: "medio" },
+    { id: "s6", name: "Baño - Mediano Pelo Largo", type: "grooming", priceCents: 21000, durationMin: 105, petSize: "mediano", hairLength: "largo" },
+    { id: "s7", name: "Baño - Grande Pelo Corto", type: "grooming", priceCents: 20000, durationMin: 90, petSize: "grande", hairLength: "corto" },
+    { id: "s8", name: "Baño - Grande Pelo Medio", type: "grooming", priceCents: 24000, durationMin: 105, petSize: "grande", hairLength: "medio" },
+    { id: "s9", name: "Baño - Grande Pelo Largo", type: "grooming", priceCents: 28000, durationMin: 120, petSize: "grande", hairLength: "largo" },
+    // Cortes por tamaño y largo de pelo
+    { id: "s10", name: "Corte - Pequeño Pelo Corto", type: "grooming", priceCents: 15000, durationMin: 60, petSize: "pequeño", hairLength: "corto" },
+    { id: "s11", name: "Corte - Pequeño Pelo Medio", type: "grooming", priceCents: 18000, durationMin: 75, petSize: "pequeño", hairLength: "medio" },
+    { id: "s12", name: "Corte - Pequeño Pelo Largo", type: "grooming", priceCents: 22000, durationMin: 90, petSize: "pequeño", hairLength: "largo" },
+    { id: "s13", name: "Corte - Mediano Pelo Corto", type: "grooming", priceCents: 20000, durationMin: 75, petSize: "mediano", hairLength: "corto" },
+    { id: "s14", name: "Corte - Mediano Pelo Medio", type: "grooming", priceCents: 24000, durationMin: 90, petSize: "mediano", hairLength: "medio" },
+    { id: "s15", name: "Corte - Mediano Pelo Largo", type: "grooming", priceCents: 28000, durationMin: 105, petSize: "mediano", hairLength: "largo" },
+    { id: "s16", name: "Corte - Grande Pelo Corto", type: "grooming", priceCents: 25000, durationMin: 90, petSize: "grande", hairLength: "corto" },
+    { id: "s17", name: "Corte - Grande Pelo Medio", type: "grooming", priceCents: 30000, durationMin: 105, petSize: "grande", hairLength: "medio" },
+    { id: "s18", name: "Corte - Grande Pelo Largo", type: "grooming", priceCents: 35000, durationMin: 120, petSize: "grande", hairLength: "largo" },
+    // Peinados por tamaño y largo de pelo
+    { id: "s19", name: "Peinado - Pequeño Pelo Corto", type: "grooming", priceCents: 10000, durationMin: 45, petSize: "pequeño", hairLength: "corto" },
+    { id: "s20", name: "Peinado - Pequeño Pelo Medio", type: "grooming", priceCents: 12000, durationMin: 60, petSize: "pequeño", hairLength: "medio" },
+    { id: "s21", name: "Peinado - Pequeño Pelo Largo", type: "grooming", priceCents: 15000, durationMin: 75, petSize: "pequeño", hairLength: "largo" },
+    { id: "s22", name: "Peinado - Mediano Pelo Corto", type: "grooming", priceCents: 13000, durationMin: 60, petSize: "mediano", hairLength: "corto" },
+    { id: "s23", name: "Peinado - Mediano Pelo Medio", type: "grooming", priceCents: 16000, durationMin: 75, petSize: "mediano", hairLength: "medio" },
+    { id: "s24", name: "Peinado - Mediano Pelo Largo", type: "grooming", priceCents: 20000, durationMin: 90, petSize: "mediano", hairLength: "largo" },
+    { id: "s25", name: "Peinado - Grande Pelo Corto", type: "grooming", priceCents: 18000, durationMin: 75, petSize: "grande", hairLength: "corto" },
+    { id: "s26", name: "Peinado - Grande Pelo Medio", type: "grooming", priceCents: 22000, durationMin: 90, petSize: "grande", hairLength: "medio" },
+    { id: "s27", name: "Peinado - Grande Pelo Largo", type: "grooming", priceCents: 26000, durationMin: 105, petSize: "grande", hairLength: "largo" },
+    // Otros servicios (sin tamaño ni largo de pelo)
+    { id: "s28", name: "Consulta Veterinaria", type: "consulta", priceCents: 50000, durationMin: 30 },
+    { id: "s29", name: "Vacunación", type: "vacuna", priceCents: 30000, durationMin: 15 },
+    { id: "s30", name: "Desparasitación", type: "extra", priceCents: 25000, durationMin: 10 },
   ],
 
   appointments: [
@@ -787,7 +817,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       id: "a3",
       clientId: "c3",
       petId: "p4",
-      serviceId: "s3",
+      serviceId: "s28",
       date: "2025-12-12",
       time: "11:00",
       status: "SCHEDULED",
@@ -797,7 +827,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       id: "a4",
       clientId: "c4",
       petId: "p5",
-      serviceId: "s4",
+      serviceId: "s29",
       date: "2025-12-12",
       time: "14:00",
       status: "DONE",
@@ -817,7 +847,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       id: "a6",
       clientId: "c6",
       petId: "p9",
-      serviceId: "s3",
+      serviceId: "s28",
       date: "2025-12-12",
       time: "16:00",
       status: "SCHEDULED",
