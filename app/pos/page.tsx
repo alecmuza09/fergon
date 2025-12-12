@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useAppStore } from "@/lib/store"
+import jsPDF from "jspdf"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,7 +29,7 @@ interface CartItem {
 }
 
 export default function POSPage() {
-  const { services, clients, pets } = useAppStore()
+  const { services, clients, pets, branches, selectedBranch } = useAppStore()
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedClient, setSelectedClient] = useState("")
   const [selectedPet, setSelectedPet] = useState("")
@@ -123,6 +124,174 @@ export default function POSPage() {
     setSelectedPet("")
     setPaymentMethod("")
     setDiscount(0)
+  }
+
+  const generatePDF = () => {
+    const branch = branches.find((b) => b.id === selectedBranch)
+    const client = clients.find((c) => c.id === selectedClient)
+    const pet = pets.find((p) => p.id === selectedPet)
+    const receiptNumber = `FERGON-${Date.now().toString().slice(-8)}`
+    const currentDate = new Date()
+    const formattedDate = currentDate.toLocaleDateString("es-MX", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+
+    // Crear nuevo documento PDF
+    const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.getWidth()
+    const margin = 20
+    let yPosition = margin
+
+    // Encabezado
+    doc.setFontSize(20)
+    doc.setFont("helvetica", "bold")
+    doc.text("FERGON OS", pageWidth / 2, yPosition, { align: "center" })
+    yPosition += 8
+
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "normal")
+    doc.text("Comprobante de Venta", pageWidth / 2, yPosition, { align: "center" })
+    yPosition += 5
+
+    doc.setFontSize(10)
+    doc.text(`No. ${receiptNumber}`, pageWidth / 2, yPosition, { align: "center" })
+    yPosition += 10
+
+    // Información de la sucursal
+    if (branch) {
+      doc.setFontSize(10)
+      doc.setFont("helvetica", "bold")
+      doc.text("Sucursal:", margin, yPosition)
+      doc.setFont("helvetica", "normal")
+      doc.text(branch.name, margin + 30, yPosition)
+      yPosition += 6
+
+      if (branch.address) {
+        doc.setFontSize(9)
+        doc.text(branch.address, margin, yPosition, { maxWidth: pageWidth - 2 * margin })
+        yPosition += 6
+      }
+
+      if (branch.phone) {
+        doc.text(`Tel: ${branch.phone}`, margin, yPosition)
+        yPosition += 6
+      }
+    }
+
+    yPosition += 5
+    doc.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 8
+
+    // Información del cliente y mascota
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.text("Cliente:", margin, yPosition)
+    doc.setFont("helvetica", "normal")
+    doc.text(client?.name || "N/A", margin + 30, yPosition)
+    yPosition += 6
+
+    if (pet) {
+      doc.setFont("helvetica", "bold")
+      doc.text("Mascota:", margin, yPosition)
+      doc.setFont("helvetica", "normal")
+      doc.text(`${pet.name} (${pet.species === "dog" ? "Perro" : "Gato"})`, margin + 30, yPosition)
+      yPosition += 6
+    }
+
+    doc.setFont("helvetica", "bold")
+    doc.text("Fecha:", margin, yPosition)
+    doc.setFont("helvetica", "normal")
+    doc.text(formattedDate, margin + 30, yPosition)
+    yPosition += 8
+
+    doc.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 8
+
+    // Detalle de servicios
+    doc.setFontSize(11)
+    doc.setFont("helvetica", "bold")
+    doc.text("Detalle de Servicios", margin, yPosition)
+    yPosition += 8
+
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "bold")
+    doc.text("Servicio", margin, yPosition)
+    doc.text("Cant.", margin + 100, yPosition)
+    doc.text("Precio", margin + 120, yPosition)
+    doc.text("Total", margin + 160, yPosition, { align: "right" })
+    yPosition += 5
+
+    doc.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 6
+
+    doc.setFont("helvetica", "normal")
+    cart.forEach((item) => {
+      const service = services.find((s) => s.id === item.serviceId)
+      if (!service) return
+
+      const serviceName = service.name.length > 35 ? service.name.substring(0, 32) + "..." : service.name
+      const itemTotal = item.price * item.quantity
+
+      doc.text(serviceName, margin, yPosition, { maxWidth: 95 })
+      doc.text(item.quantity.toString(), margin + 100, yPosition)
+      doc.text(formatCurrency(item.price), margin + 120, yPosition)
+      doc.text(formatCurrency(itemTotal), margin + 160, yPosition, { align: "right" })
+      yPosition += 6
+
+      // Verificar si necesitamos una nueva página
+      if (yPosition > 250) {
+        doc.addPage()
+        yPosition = margin
+      }
+    })
+
+    yPosition += 5
+    doc.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 8
+
+    // Totales
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "normal")
+    doc.text("Subtotal:", margin + 100, yPosition, { align: "right" })
+    doc.text(formatCurrency(subtotal), margin + 160, yPosition, { align: "right" })
+    yPosition += 6
+
+    if (discount > 0) {
+      doc.text(`Descuento (${discount}%):`, margin + 100, yPosition, { align: "right" })
+      doc.text(`-${formatCurrency(discountAmount)}`, margin + 160, yPosition, { align: "right" })
+      yPosition += 6
+    }
+
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(12)
+    doc.text("TOTAL:", margin + 100, yPosition, { align: "right" })
+    doc.text(formatCurrency(total), margin + 160, yPosition, { align: "right" })
+    yPosition += 8
+
+    doc.setFontSize(9)
+    doc.setFont("helvetica", "normal")
+    doc.text(`Método de pago: ${paymentMethod === "cash" ? "Efectivo" : paymentMethod === "card" ? "Tarjeta" : "Transferencia"}`, margin, yPosition)
+    yPosition += 10
+
+    // Pie de página
+    doc.line(margin, yPosition, pageWidth - margin, yPosition)
+    yPosition += 8
+
+    doc.setFontSize(8)
+    doc.text("Gracias por su preferencia", pageWidth / 2, yPosition, { align: "center" })
+    yPosition += 5
+
+    if (branch?.website) {
+      doc.text(branch.website, pageWidth / 2, yPosition, { align: "center" })
+    }
+
+    // Guardar PDF
+    const fileName = `Nota_Venta_${receiptNumber}_${currentDate.toISOString().split("T")[0]}.pdf`
+    doc.save(fileName)
   }
 
   return (
@@ -537,11 +706,11 @@ export default function POSPage() {
             </div>
 
             <div className="flex space-x-2">
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button variant="outline" className="flex-1 bg-transparent" onClick={generatePDF}>
                 <FileText className="w-4 h-4 mr-2" />
                 Generar PDF
               </Button>
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button variant="outline" className="flex-1 bg-transparent" disabled>
                 Enviar por Email
               </Button>
             </div>

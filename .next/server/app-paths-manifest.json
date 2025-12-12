@@ -1,7 +1,7 @@
 {
-  "/payroll/page": "app/payroll/page.js",
   "/pets/page": "app/pets/page.js",
+  "/payroll/page": "app/payroll/page.js",
   "/grooming/page": "app/grooming/page.js",
-  "/pos/page": "app/pos/page.js",
-  "/veterinary/page": "app/veterinary/page.js"
+  "/veterinary/page": "app/veterinary/page.js",
+  "/pos/page": "app/pos/page.js"
 }
