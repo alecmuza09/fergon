@@ -71,9 +71,11 @@ export interface GroomingWorkflow {
   id: string
   petId: string
   appointmentId: string
-  stage: "reception" | "pre-check" | "bath" | "dry" | "cut" | "review" | "delivery"
+  stage: "reception" | "pre-check" | "bath" | "cut" | "delivery"
   startTime: string
   photos: { before?: string; after?: string }
+  consultationRequested?: boolean
+  consultationAuthorized?: boolean
 }
 
 export interface Vaccination {
@@ -199,17 +201,19 @@ interface AppState {
   setSelectedBranch: (branchId: string) => void
   setSelectedDate: (date: string) => void
   updateGroomingStage: (workflowId: string, stage: GroomingWorkflow["stage"]) => void
+  updateGroomingConsultation: (workflowId: string, consultationRequested?: boolean, consultationAuthorized?: boolean) => void
   updateRouteStopStatus: (routeId: string, stopId: string, status: RouteStop["status"]) => void
   addClient: (client: Omit<Client, "id">) => void
   updateClient: (id: string, client: Partial<Client>) => void
   addPet: (pet: Omit<Pet, "id">) => void
   updatePet: (id: string, pet: Partial<Pet>) => void
-  addLoan: (loan: Omit<Loan, "id" | "totalWeeks" | "interestRate" | "totalAmount" | "remainingAmount" | "paidWeeks" | "status" | "startPeriod" | "deductions">) => void
+  addLoan: (loan: Omit<Loan, "id" | "totalWeeks" | "interestRate" | "totalAmount" | "remainingAmount" | "paidWeeks" | "status" | "startPeriod" | "deductions"> & { applyInterest?: boolean }) => void
+  recordLoanPayment: (loanId: string, amount: number, date: string, period: string) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
   selectedBranch: "b1",
-  selectedDate: new Date().toISOString().split("T")[0],
+  selectedDate: "2025-12-12",
 
   branches: [
     {
@@ -247,9 +251,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     {
       id: "pr1",
       userId: "u7",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 757700, // $7,577.00
       concepts: [
         { id: "c1", name: "IGSS", type: "DEDUCTION", amount: 30163 },
@@ -262,15 +266,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 478118,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr2",
       userId: "u8",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c3", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -283,15 +287,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr3",
       userId: "u9",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 242160, // $2,421.60
       concepts: [
         { id: "c5", name: "IGSS", type: "DEDUCTION", amount: 110336 },
@@ -304,15 +308,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr4",
       userId: "u10",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c7", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -325,15 +329,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr5",
       userId: "u11",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c9", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -346,15 +350,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr6",
       userId: "u12",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c11", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -367,15 +371,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr7",
       userId: "u13",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c13", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -388,15 +392,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr8",
       userId: "u14",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c15", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -409,15 +413,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr9",
       userId: "u15",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c17", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -430,15 +434,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr10",
       userId: "u16",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c19", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -451,15 +455,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr11",
       userId: "u17",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c21", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -472,15 +476,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr12",
       userId: "u18",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c23", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -493,15 +497,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
     {
       id: "pr13",
       userId: "u19",
-      period: "2024-W15",
-      periodStart: "2024-04-08",
-      periodEnd: "2024-04-14",
+      period: "2025-W49",
+      periodStart: "2025-12-09",
+      periodEnd: "2025-12-15",
       baseSalary: 252205, // $2,522.05
       concepts: [
         { id: "c25", name: "IGSS", type: "DEDUCTION", amount: 47132 },
@@ -514,8 +518,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       effectivePayment: 0,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-14",
-      paidAt: "2024-04-15",
+      createdAt: "2025-12-15",
+      paidAt: "2025-12-16",
     },
   ],
 
@@ -527,7 +531,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0101",
       address: "Av. Revolución 123, Col. Centro, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-15",
+      lastService: "2025-12-15",
       petCount: 2,
     },
     {
@@ -537,7 +541,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0102",
       address: "Av. Constitución 456, Col. Centro, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-10",
+      lastService: "2025-12-10",
       petCount: 1,
     },
     {
@@ -547,7 +551,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0103",
       address: "Av. Lázaro Cárdenas 789, Col. Valle del Mirador, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-12",
+      lastService: "2025-12-12",
       petCount: 1,
     },
     {
@@ -557,7 +561,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0104",
       address: "Av. San Pedro 321, Col. Valle Oriente, San Pedro Garza García, N.L.",
       branchId: "b1",
-      lastService: "2024-01-08",
+      lastService: "2025-12-08",
       petCount: 3,
     },
     {
@@ -567,7 +571,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0105",
       address: "Av. Universidad 1500, Col. Mitras Centro, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-14",
+      lastService: "2025-12-14",
       petCount: 1,
     },
     {
@@ -577,7 +581,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0106",
       address: "Av. Paseo de los Leones 654, Col. Cumbres, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-11",
+      lastService: "2025-12-11",
       petCount: 2,
     },
     {
@@ -587,7 +591,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0107",
       address: "Av. Alfonso Reyes 845, Col. Del Valle, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-09",
+      lastService: "2025-12-09",
       petCount: 1,
     },
     {
@@ -597,7 +601,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       whatsapp: "555-0108",
       address: "Av. Eugenio Garza Sada 321, Col. Tecnológico, Monterrey, N.L.",
       branchId: "b1",
-      lastService: "2024-01-13",
+      lastService: "2025-12-13",
       petCount: 1,
     },
   ],
@@ -764,7 +768,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c1",
       petId: "p1",
       serviceId: "s1",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "09:00",
       status: "SCHEDULED",
       branchId: "b1",
@@ -774,7 +778,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c2",
       petId: "p3",
       serviceId: "s2",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "10:30",
       status: "IN_PROGRESS",
       branchId: "b1",
@@ -784,7 +788,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c3",
       petId: "p4",
       serviceId: "s3",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "11:00",
       status: "SCHEDULED",
       branchId: "b1",
@@ -794,7 +798,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c4",
       petId: "p5",
       serviceId: "s4",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "14:00",
       status: "DONE",
       branchId: "b1",
@@ -804,7 +808,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c5",
       petId: "p8",
       serviceId: "s1",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "15:30",
       status: "SCHEDULED",
       branchId: "b1",
@@ -814,7 +818,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c6",
       petId: "p9",
       serviceId: "s3",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "16:00",
       status: "SCHEDULED",
       branchId: "b1",
@@ -824,7 +828,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c7",
       petId: "p11",
       serviceId: "s5",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "17:00",
       status: "SCHEDULED",
       branchId: "b1",
@@ -834,7 +838,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c8",
       petId: "p12",
       serviceId: "s2",
-      date: "2024-01-17",
+      date: "2025-12-12",
       time: "18:00",
       status: "SCHEDULED",
       branchId: "b1",
@@ -923,7 +927,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     {
       id: "r1",
       zone: "10",
-      date: "2024-01-17",
+      date: "2025-12-12",
       branchId: "b1",
       stops: [
         {
@@ -958,7 +962,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     {
       id: "r2",
       zone: "30",
-      date: "2024-01-17",
+      date: "2025-12-12",
       branchId: "b1",
       stops: [
         {
@@ -989,7 +993,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c1",
       nps: 9,
       comment: "Excelente servicio, muy profesionales",
-      date: "2024-01-15",
+      date: "2025-12-15",
       branchId: "b1",
     },
     {
@@ -997,7 +1001,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c2",
       nps: 8,
       comment: "Buen trabajo, mi mascota quedó hermosa",
-      date: "2024-01-14",
+      date: "2025-12-14",
       branchId: "b1",
     },
     {
@@ -1005,7 +1009,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c3",
       nps: 10,
       comment: "Perfectos! Siempre cuidan muy bien a Mimi",
-      date: "2024-01-13",
+      date: "2025-12-13",
       branchId: "b1",
     },
     {
@@ -1013,7 +1017,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       clientId: "c4",
       nps: 7,
       comment: "Bien en general, podrían mejorar los tiempos",
-      date: "2024-01-12",
+      date: "2025-12-12",
       branchId: "b1",
     },
   ],
@@ -1024,8 +1028,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       userId: "u7",
       amount: 10000000, // $10,000.00
       weeklyPayment: 1500000, // $1,500.00 por semana
-      startDate: "2024-04-08",
-      startPeriod: "2024-W15",
+      startDate: "2025-12-09",
+      startPeriod: "2025-W49",
       totalWeeks: 7, // 10,000 / 1,500 = 6.67, redondeado a 7 semanas
       interestRate: 10, // 10% porque es en múltiples semanas
       totalAmount: 11000000, // $11,000.00 (10,000 + 10%)
@@ -1033,15 +1037,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       paidWeeks: 1,
       status: "ACTIVE",
       branchId: "b1",
-      createdAt: "2024-04-08",
+      createdAt: "2025-12-09",
       deductions: [
         {
           id: "ld1",
           loanId: "l1",
           payrollRecordId: "pr1",
-          period: "2024-W15",
+          period: "2025-W49",
           amount: 1500000,
-          date: "2024-04-15",
+          date: "2025-12-16",
         },
       ],
     },
@@ -1050,8 +1054,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       userId: "u9",
       amount: 5000000, // $5,000.00
       weeklyPayment: 5000000, // $5,000.00 (pago completo en una semana)
-      startDate: "2024-04-10",
-      startPeriod: "2024-W15",
+      startDate: "2025-12-10",
+      startPeriod: "2025-W49",
       totalWeeks: 1,
       interestRate: 0, // 0% porque se paga en la misma semana
       totalAmount: 5000000, // Sin interés
@@ -1059,15 +1063,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       paidWeeks: 1,
       status: "PAID",
       branchId: "b1",
-      createdAt: "2024-04-10",
+      createdAt: "2025-12-10",
       deductions: [
         {
           id: "ld2",
           loanId: "l2",
           payrollRecordId: "pr3",
-          period: "2024-W15",
+          period: "2025-W49",
           amount: 5000000,
-          date: "2024-04-15",
+          date: "2025-12-16",
         },
       ],
     },
@@ -1076,8 +1080,8 @@ export const useAppStore = create<AppState>((set, get) => ({
       userId: "u12",
       amount: 3000000, // $3,000.00
       weeklyPayment: 500000, // $500.00 por semana
-      startDate: "2024-04-01",
-      startPeriod: "2024-W14",
+      startDate: "2025-12-02",
+      startPeriod: "2025-W48",
       totalWeeks: 7, // 3,000 / 500 = 6 semanas + interés = 7 semanas
       interestRate: 10, // 10% porque es en múltiples semanas
       totalAmount: 3300000, // $3,300.00 (3,000 + 10%)
@@ -1085,15 +1089,15 @@ export const useAppStore = create<AppState>((set, get) => ({
       paidWeeks: 1,
       status: "ACTIVE",
       branchId: "b1",
-      createdAt: "2024-04-01",
+      createdAt: "2025-12-02",
       deductions: [
         {
           id: "ld3",
           loanId: "l3",
           payrollRecordId: "pr6",
-          period: "2024-W15",
+          period: "2025-W49",
           amount: 500000,
-          date: "2024-04-15",
+          date: "2025-12-16",
         },
       ],
     },
@@ -1107,6 +1111,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((state) => ({
       groomingWorkflows: state.groomingWorkflows.map((workflow) =>
         workflow.id === workflowId ? { ...workflow, stage } : workflow,
+      ),
+    })),
+
+  updateGroomingConsultation: (workflowId, consultationRequested, consultationAuthorized) =>
+    set((state) => ({
+      groomingWorkflows: state.groomingWorkflows.map((workflow) =>
+        workflow.id === workflowId
+          ? {
+              ...workflow,
+              ...(consultationRequested !== undefined && { consultationRequested }),
+              ...(consultationAuthorized !== undefined && { consultationAuthorized }),
+            }
+          : workflow,
       ),
     })),
 
@@ -1147,7 +1164,9 @@ export const useAppStore = create<AppState>((set, get) => ({
       // Calcular semanas y interés
       const totalWeeks = Math.ceil(loan.amount / loan.weeklyPayment)
       const isMultipleWeeks = totalWeeks > 1
-      const interestRate = isMultipleWeeks ? 10 : 0
+      // El interés es opcional: si applyInterest es true o undefined y es múltiples semanas, aplica 10%
+      const shouldApplyInterest = loan.applyInterest !== false && isMultipleWeeks
+      const interestRate = shouldApplyInterest ? 10 : 0
       const interestAmount = Math.round((loan.amount * interestRate) / 100)
       const totalAmount = loan.amount + interestAmount
 
@@ -1173,6 +1192,40 @@ export const useAppStore = create<AppState>((set, get) => ({
             deductions: [],
           },
         ],
+      }
+    }),
+
+  recordLoanPayment: (loanId, amount, date, period) =>
+    set((state) => {
+      const loan = state.loans.find((l) => l.id === loanId)
+      if (!loan || loan.status !== "ACTIVE") return state
+
+      const newRemainingAmount = Math.max(0, loan.remainingAmount - amount)
+      const newPaidWeeks = loan.weeklyPayment > 0 ? Math.min(loan.totalWeeks, loan.paidWeeks + Math.floor(amount / loan.weeklyPayment)) : loan.paidWeeks
+      const newStatus = newRemainingAmount === 0 ? ("PAID" as const) : loan.status
+
+      // Crear nueva deducción
+      const newDeduction: LoanDeduction = {
+        id: `ld${Date.now()}`,
+        loanId,
+        payrollRecordId: `manual-${Date.now()}`,
+        period,
+        amount,
+        date,
+      }
+
+      return {
+        loans: state.loans.map((l) =>
+          l.id === loanId
+            ? {
+                ...l,
+                remainingAmount: newRemainingAmount,
+                paidWeeks: newPaidWeeks,
+                status: newStatus,
+                deductions: [...l.deductions, newDeduction],
+              }
+            : l,
+        ),
       }
     }),
 }))

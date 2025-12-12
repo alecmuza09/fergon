@@ -1,16 +1,9 @@
 {
-  "/page": "app/page.js",
-  "/clients/page": "app/clients/page.js",
-  "/pets/page": "app/pets/page.js",
-  "/appointments/page": "app/appointments/page.js",
-  "/veterinary/page": "app/veterinary/page.js",
-  "/grooming/page": "app/grooming/page.js",
-  "/routes/page": "app/routes/page.js",
-  "/pos/page": "app/pos/page.js",
-  "/inventory/page": "app/inventory/page.js",
-  "/payroll/page": "app/payroll/page.js",
   "/loans/page": "app/loans/page.js",
-  "/quality/page": "app/quality/page.js",
-  "/client-portal/page": "app/client-portal/page.js",
-  "/settings/page": "app/settings/page.js"
+  "/payroll/page": "app/payroll/page.js",
+  "/routes/page": "app/routes/page.js",
+  "/pets/page": "app/pets/page.js",
+  "/pos/page": "app/pos/page.js",
+  "/grooming/page": "app/grooming/page.js",
+  "/veterinary/page": "app/veterinary/page.js"
 }

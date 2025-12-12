@@ -13,13 +13,11 @@ import { Progress } from "@/components/ui/progress"
 import { Clock, Camera, ArrowRight, Heart, Upload } from "lucide-react"
 
 const stages = [
-  { id: "reception", name: "Recepción", color: "bg-slate-100" },
+  { id: "reception", name: "En Sucursal", color: "bg-slate-100" },
   { id: "pre-check", name: "Pre-chequeo", color: "bg-blue-100" },
   { id: "bath", name: "Baño", color: "bg-cyan-100" },
-  { id: "dry", name: "Secado", color: "bg-yellow-100" },
-  { id: "cut", name: "Corte/Estilo", color: "bg-orange-100" },
-  { id: "review", name: "Revisión Final", color: "bg-green-100" },
-  { id: "delivery", name: "Entrega", color: "bg-purple-100" },
+  { id: "cut", name: "Corte", color: "bg-orange-100" },
+  { id: "delivery", name: "Listo para Entregar", color: "bg-green-100" },
 ]
 
 export default function GroomingPage() {
@@ -92,7 +90,7 @@ export default function GroomingPage() {
           <CardTitle>Resumen del Día</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-4">
+          <div className="grid grid-cols-5 gap-4">
             {stages.map((stage) => {
               const count = getWorkflowsInStage(stage.id).length
               return (
@@ -107,7 +105,7 @@ export default function GroomingPage() {
       </Card>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-7 gap-4 min-h-[600px]">
+      <div className="grid grid-cols-5 gap-4 min-h-[600px]">
         {stages.map((stage) => {
           const workflows = getWorkflowsInStage(stage.id)
           return (
@@ -277,7 +275,7 @@ export default function GroomingPage() {
             <p>• Arrastra las tarjetas entre columnas para actualizar el estado</p>
             <p>• Haz clic en el ícono de cámara para subir fotos de evidencia</p>
             <p>• El tiempo en cada etapa se actualiza automáticamente</p>
-            <p>• Las mascotas en "Entrega" están listas para recoger</p>
+            <p>• Las mascotas en "Listo para Entregar" están completadas y esperando recogida</p>
           </div>
         </CardContent>
       </Card>

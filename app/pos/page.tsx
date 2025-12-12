@@ -12,6 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { CreditCard, ShoppingCart, Plus, Minus, Trash2, FileText, Percent } from "lucide-react"
 
+const formatCurrency = (cents: number) => {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 2,
+  }).format(cents / 100)
+}
+
 interface CartItem {
   serviceId: string
   quantity: number
@@ -123,7 +131,7 @@ export default function POSPage() {
                             <Badge variant="outline">{service.type}</Badge>
                             <span className="text-sm text-muted-foreground">{service.durationMin}min</span>
                           </div>
-                          <div className="text-lg font-bold mt-2">${(service.priceCents / 100).toFixed(2)}</div>
+                          <div className="text-lg font-bold mt-2">{formatCurrency(service.priceCents)}</div>
                         </div>
                         <Button size="sm" onClick={() => addToCart(service.id)} className="ml-4">
                           <Plus className="w-4 h-4" />
@@ -207,7 +215,7 @@ export default function POSPage() {
                     <div key={item.serviceId} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                       <div className="flex-1">
                         <div className="font-medium">{getServiceName(item.serviceId)}</div>
-                        <div className="text-sm text-muted-foreground">${(item.price / 100).toFixed(2)} c/u</div>
+                        <div className="text-sm text-muted-foreground">{formatCurrency(item.price)} c/u</div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Button
@@ -246,7 +254,7 @@ export default function POSPage() {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>${(subtotal / 100).toFixed(2)}</span>
+                    <span>{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Label htmlFor="discount" className="flex-1">
@@ -268,13 +276,13 @@ export default function POSPage() {
                   {discount > 0 && (
                     <div className="flex justify-between text-sm text-muted-foreground">
                       <span>Descuento ({discount}%):</span>
-                      <span>-${(discountAmount / 100).toFixed(2)}</span>
+                      <span>-{formatCurrency(discountAmount)}</span>
                     </div>
                   )}
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
-                    <span>${(total / 100).toFixed(2)}</span>
+                    <span>{formatCurrency(total)}</span>
                   </div>
                 </div>
 
@@ -339,7 +347,7 @@ export default function POSPage() {
                     <span>
                       {getServiceName(item.serviceId)} x{item.quantity}
                     </span>
-                    <span>${((item.price * item.quantity) / 100).toFixed(2)}</span>
+                    <span>{formatCurrency(item.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>

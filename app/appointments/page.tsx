@@ -11,6 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Calendar, Clock, Plus, Filter, User, Heart, Scissors } from "lucide-react"
 
+const formatCurrency = (cents: number) => {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 2,
+  }).format(cents / 100)
+}
+
 export default function AppointmentsPage() {
   const { appointments, clients, pets, services, selectedBranch, selectedDate } = useAppStore()
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false)
@@ -186,7 +194,7 @@ export default function AppointmentsPage() {
                   <SelectContent>
                     {services.map((service) => (
                       <SelectItem key={service.id} value={service.id}>
-                        {service.name} - ${(service.priceCents / 100).toFixed(2)}
+                        {service.name} - {formatCurrency(service.priceCents)}
                       </SelectItem>
                     ))}
                   </SelectContent>

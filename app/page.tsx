@@ -116,7 +116,13 @@ export default function Dashboard() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${(mockRevenue / 100).toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {(mockRevenue / 100).toLocaleString("es-MX", {
+                style: "currency",
+                currency: "MXN",
+                minimumFractionDigits: 2,
+              })}
+            </div>
             <p className="text-xs text-muted-foreground">Hoy</p>
           </CardContent>
         </Card>

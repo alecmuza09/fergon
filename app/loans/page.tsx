@@ -12,12 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { DollarSign, Plus, Search, FileText, CheckCircle2, Clock, Eye, Calculator, AlertCircle } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { DollarSign, Plus, Search, FileText, CheckCircle2, Clock, Eye, Calculator, AlertCircle, CreditCard } from "lucide-react"
 
 const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("es-MX", {
     style: "currency",
-    currency: "USD",
+    currency: "MXN",
     minimumFractionDigits: 2,
   }).format(cents / 100)
 }
@@ -40,16 +41,24 @@ function getWeekNumber(date: Date): number {
 }
 
 export default function LoansPage() {
-  const { loans, users, selectedBranch, addLoan } = useAppStore()
+  const { loans, users, selectedBranch, addLoan, recordLoanPayment } = useAppStore()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [isNewLoanOpen, setIsNewLoanOpen] = useState(false)
   const [selectedLoan, setSelectedLoan] = useState<string | null>(null)
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+  const [paymentLoanId, setPaymentLoanId] = useState<string | null>(null)
   const [newLoan, setNewLoan] = useState({
     userId: "",
     amount: "",
     weeklyPayment: "",
     startDate: new Date().toISOString().split("T")[0],
+    applyInterest: true,
+  })
+  const [paymentData, setPaymentData] = useState({
+    amount: "",
+    date: new Date().toISOString().split("T")[0],
+    period: "",
   })
 
   // Filter loans by branch
@@ -81,10 +90,12 @@ export default function LoansPage() {
   }
 
   // Calculate loan details
-  const calculateLoanDetails = (amount: number, weeklyPayment: number) => {
+  const calculateLoanDetails = (amount: number, weeklyPayment: number, applyInterest?: boolean) => {
     const totalWeeks = Math.ceil(amount / weeklyPayment)
     const isMultipleWeeks = totalWeeks > 1
-    const interestRate = isMultipleWeeks ? 10 : 0
+    // El interés es opcional: si applyInterest es true o undefined y es múltiples semanas, aplica 10%
+    const shouldApplyInterest = applyInterest !== false && isMultipleWeeks
+    const interestRate = shouldApplyInterest ? 10 : 0
     const interestAmount = Math.round((amount * interestRate) / 100)
     const totalAmount = amount + interestAmount
 
@@ -94,6 +105,7 @@ export default function LoansPage() {
       interestAmount,
       totalAmount,
       isMultipleWeeks,
+      shouldApplyInterest,
     }
   }
 
@@ -104,8 +116,14 @@ export default function LoansPage() {
 
     const amount = Math.round(parseFloat(newLoan.amount) * 100)
     const weeklyPayment = Math.round(parseFloat(newLoan.weeklyPayment) * 100)
+    const MAX_LOAN_AMOUNT = 5000000 // $50,000.00 pesos mexicanos
 
     if (amount <= 0 || weeklyPayment <= 0 || weeklyPayment > amount) {
+      return
+    }
+
+    if (amount > MAX_LOAN_AMOUNT) {
+      alert(`El monto máximo permitido es ${formatCurrency(MAX_LOAN_AMOUNT)}`)
       return
     }
 
@@ -117,6 +135,7 @@ export default function LoansPage() {
       branchId: selectedBranch,
       createdAt: new Date().toISOString(),
       deductions: [],
+      applyInterest: newLoan.applyInterest,
     })
 
     setNewLoan({
@@ -124,8 +143,49 @@ export default function LoansPage() {
       amount: "",
       weeklyPayment: "",
       startDate: new Date().toISOString().split("T")[0],
+      applyInterest: true,
     })
     setIsNewLoanOpen(false)
+  }
+
+  const handleRecordPayment = () => {
+    if (!paymentLoanId || !paymentData.amount || !paymentData.date || !paymentData.period) {
+      return
+    }
+
+    const amount = Math.round(parseFloat(paymentData.amount) * 100)
+    if (amount <= 0) {
+      return
+    }
+
+    recordLoanPayment(paymentLoanId, amount, paymentData.date, paymentData.period)
+    
+    setPaymentData({
+      amount: "",
+      date: new Date().toISOString().split("T")[0],
+      period: "",
+    })
+    setIsPaymentOpen(false)
+    setPaymentLoanId(null)
+  }
+
+  const openPaymentDialog = (loanId: string) => {
+    const loan = branchLoans.find((l) => l.id === loanId)
+    if (!loan) return
+
+    // Calcular período actual basado en la fecha de hoy
+    const today = new Date()
+    const year = today.getFullYear()
+    const week = getWeekNumber(today)
+    const currentPeriod = `${year}-W${week.toString().padStart(2, "0")}`
+
+    setPaymentLoanId(loanId)
+    setPaymentData({
+      amount: "",
+      date: today.toISOString().split("T")[0],
+      period: currentPeriod,
+    })
+    setIsPaymentOpen(true)
   }
 
   const loanDetails = selectedLoan ? branchLoans.find((l) => l.id === selectedLoan) : null
@@ -134,8 +194,11 @@ export default function LoansPage() {
       ? calculateLoanDetails(
           Math.round(parseFloat(newLoan.amount) * 100),
           Math.round(parseFloat(newLoan.weeklyPayment) * 100),
+          newLoan.applyInterest,
         )
       : null
+  
+  const paymentLoanDetails = paymentLoanId ? branchLoans.find((l) => l.id === paymentLoanId) : null
 
   // Calculate totals
   const activeLoans = branchLoans.filter((l) => l.status === "ACTIVE").length
@@ -186,18 +249,19 @@ export default function LoansPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="amount">Cantidad del Préstamo ($)</Label>
+                  <Label htmlFor="amount">Cantidad del Préstamo ($MXN) - Máximo: $50,000.00</Label>
                   <Input
                     id="amount"
                     type="number"
                     step="0.01"
                     placeholder="0.00"
+                    max="50000"
                     value={newLoan.amount}
                     onChange={(e) => setNewLoan({ ...newLoan, amount: e.target.value })}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="weeklyPayment">Pago Semanal Máximo ($)</Label>
+                  <Label htmlFor="weeklyPayment">Pago Semanal Máximo ($MXN)</Label>
                   <Input
                     id="weeklyPayment"
                     type="number"
@@ -217,6 +281,17 @@ export default function LoansPage() {
                   value={newLoan.startDate}
                   onChange={(e) => setNewLoan({ ...newLoan, startDate: e.target.value })}
                 />
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="applyInterest"
+                  checked={newLoan.applyInterest}
+                  onCheckedChange={(checked) => setNewLoan({ ...newLoan, applyInterest: checked })}
+                />
+                <Label htmlFor="applyInterest" className="cursor-pointer">
+                  Aplicar 10% de interés (si es múltiples semanas)
+                </Label>
               </div>
 
               {calculatedDetails && (
@@ -387,9 +462,21 @@ export default function LoansPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button variant="ghost" size="sm" onClick={() => setSelectedLoan(loan.id)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          {loan.status === "ACTIVE" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPaymentDialog(loan.id)}
+                            >
+                              <CreditCard className="w-4 h-4 mr-1" />
+                              Pagar
+                            </Button>
+                          )}
+                          <Button variant="ghost" size="sm" onClick={() => setSelectedLoan(loan.id)}>
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
@@ -519,12 +606,86 @@ export default function LoansPage() {
                 </Tabs>
 
                 <div className="flex justify-end space-x-2">
+                  {loanDetails.status === "ACTIVE" && (
+                    <Button
+                      variant="default"
+                      onClick={() => {
+                        setSelectedLoan(null)
+                        openPaymentDialog(loanDetails.id)
+                      }}
+                    >
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Registrar Pago
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={() => setSelectedLoan(null)}>
                     Cerrar
                   </Button>
                 </div>
               </div>
             </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Payment Dialog */}
+      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar Pago de Préstamo</DialogTitle>
+          </DialogHeader>
+          {paymentLoanDetails && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-muted-foreground">Empleado</Label>
+                <p className="font-medium">{getUserName(paymentLoanDetails.userId)}</p>
+              </div>
+              <div>
+                <Label className="text-muted-foreground">Monto Restante</Label>
+                <p className="font-bold text-lg">{formatCurrency(paymentLoanDetails.remainingAmount)}</p>
+              </div>
+              <div>
+                <Label htmlFor="paymentAmount">Monto del Pago ($MXN)</Label>
+                <Input
+                  id="paymentAmount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={paymentData.amount}
+                  onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="paymentDate">Fecha del Pago</Label>
+                <Input
+                  id="paymentDate"
+                  type="date"
+                  value={paymentData.date}
+                  onChange={(e) => setPaymentData({ ...paymentData, date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="paymentPeriod">Período (YYYY-WW)</Label>
+                <Input
+                  id="paymentPeriod"
+                  type="text"
+                  placeholder="2025-W49"
+                  value={paymentData.period}
+                  onChange={(e) => setPaymentData({ ...paymentData, period: e.target.value })}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ejemplo: 2025-W49 (año-semana)
+                </p>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button variant="outline" onClick={() => setIsPaymentOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleRecordPayment} disabled={!paymentData.amount || !paymentData.date || !paymentData.period}>
+                  Registrar Pago
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

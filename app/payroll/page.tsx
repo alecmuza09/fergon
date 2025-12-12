@@ -14,9 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DollarSign, Plus, Search, FileText, CheckCircle2, Clock, Download, Eye, Calendar } from "lucide-react"
 
 const formatCurrency = (cents: number) => {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("es-MX", {
     style: "currency",
-    currency: "USD",
+    currency: "MXN",
     minimumFractionDigits: 2,
   }).format(cents / 100)
 }

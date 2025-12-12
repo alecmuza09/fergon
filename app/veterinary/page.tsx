@@ -9,10 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Stethoscope, Calendar, FileText, AlertTriangle, Heart, Clock, Pill, Syringe } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Stethoscope, Calendar, FileText, AlertTriangle, Heart, Clock, Pill, Syringe, Scissors, CheckCircle2, XCircle } from "lucide-react"
 
 export default function VeterinaryPage() {
-  const { appointments, pets, clients, vaccinations, selectedBranch, selectedDate } = useAppStore()
+  const { appointments, pets, clients, vaccinations, groomingWorkflows, selectedBranch, selectedDate, updateGroomingConsultation } = useAppStore()
   const [selectedPet, setSelectedPet] = useState<string | null>(null)
 
   // Filter veterinary appointments for today
@@ -67,12 +68,168 @@ export default function VeterinaryPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="consultations" className="space-y-6">
+      <Tabs defaultValue="grooming" className="space-y-6">
         <TabsList>
+          <TabsTrigger value="grooming">
+            <Scissors className="w-4 h-4 mr-2" />
+            Mascotas en Estética
+          </TabsTrigger>
           <TabsTrigger value="consultations">Consultas del Día</TabsTrigger>
           <TabsTrigger value="vaccinations">Esquemas de Vacunación</TabsTrigger>
           <TabsTrigger value="history">Historia Clínica</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="grooming" className="space-y-6">
+          {/* Pets in Grooming */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Scissors className="w-5 h-5" />
+                <span>Mascotas en Proceso de Estética</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {groomingWorkflows.length === 0 ? (
+                <div className="text-center py-8">
+                  <Scissors className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium text-muted-foreground">No hay mascotas en estética</h3>
+                  <p className="text-sm text-muted-foreground">No se encontraron mascotas en proceso de grooming</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mascota</TableHead>
+                      <TableHead>Dueño</TableHead>
+                      <TableHead>Etapa</TableHead>
+                      <TableHead>Consulta Solicitada</TableHead>
+                      <TableHead>Autorizada</TableHead>
+                      <TableHead>Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {groomingWorkflows.map((workflow) => {
+                      const pet = getPetData(workflow.petId)
+                      const client = getClientData(workflow.petId)
+                      if (!pet || !client) return null
+
+                      const getStageName = (stage: string) => {
+                        switch (stage) {
+                          case "reception":
+                            return "En Sucursal"
+                          case "pre-check":
+                            return "Pre-chequeo"
+                          case "bath":
+                            return "Baño"
+                          case "cut":
+                            return "Corte"
+                          case "delivery":
+                            return "Listo para Entregar"
+                          default:
+                            return stage
+                        }
+                      }
+
+                      const getStageBadge = (stage: string) => {
+                        switch (stage) {
+                          case "reception":
+                            return "secondary"
+                          case "pre-check":
+                            return "default"
+                          case "bath":
+                            return "default"
+                          case "cut":
+                            return "default"
+                          case "delivery":
+                            return "outline"
+                          default:
+                            return "secondary"
+                        }
+                      }
+
+                      return (
+                        <TableRow key={workflow.id}>
+                          <TableCell>
+                            <div className="flex items-center space-x-3">
+                              <Avatar className="w-10 h-10">
+                                <AvatarImage src={pet.photo || "/placeholder.svg"} alt={pet.name} />
+                                <AvatarFallback>
+                                  <Heart className="w-5 h-5" />
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{pet.name}</div>
+                                <div className="text-sm text-muted-foreground">{pet.breed}</div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{client.name}</TableCell>
+                          <TableCell>
+                            <Badge variant={getStageBadge(workflow.stage) as any}>
+                              {getStageName(workflow.stage)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={workflow.consultationRequested || false}
+                                onCheckedChange={(checked) =>
+                                  updateGroomingConsultation(workflow.id, checked as boolean, undefined)
+                                }
+                              />
+                              <span className="text-sm">
+                                {workflow.consultationRequested ? (
+                                  <span className="flex items-center text-green-600">
+                                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                                    Sí
+                                  </span>
+                                ) : (
+                                  <span className="text-muted-foreground">No</span>
+                                )}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {workflow.consultationRequested ? (
+                              <div className="flex items-center space-x-2">
+                                <Checkbox
+                                  checked={workflow.consultationAuthorized || false}
+                                  onCheckedChange={(checked) =>
+                                    updateGroomingConsultation(workflow.id, undefined, checked as boolean)
+                                  }
+                                />
+                                <span className="text-sm">
+                                  {workflow.consultationAuthorized ? (
+                                    <span className="flex items-center text-green-600">
+                                      <CheckCircle2 className="w-4 h-4 mr-1" />
+                                      Autorizada
+                                    </span>
+                                  ) : (
+                                    <span className="flex items-center text-orange-600">
+                                      <XCircle className="w-4 h-4 mr-1" />
+                                      Pendiente
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedPet(pet.id)}>
+                              Ver Historia
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="consultations" className="space-y-6">
           {/* Today's Consultations */}
